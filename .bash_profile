@@ -1,38 +1,28 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
+fi
+
+# Uncomment the following line if you don't like systemctl's auto-paging feature:
+# export SYSTEMD_PAGER=
+
+# User specific aliases and functions
+alias sd='cd /opt/git/StationDown/stationdown/'
+
+function cs () {
+    cd $1
+    ls
+}
+
 export PATH=/opt/local/bin:$PATH
-
-cd ~/git
-
-### ALIASES 
-alias vag="cd ~/git/puppet-vagrant && vagrant $@"
-alias py2="/opt/local/bin/python2.7"
-alias py3="/opt/local/bin/python3.3"
-
-### Added by the Heroku Toolbelt
-export PATH="/usr/local/heroku/bin:$PATH"
 
 ###FUNCTIONS
 function cs()
 {
  builtin cd "$*" && ls
 }
-##MAVERICKS WORKAROUND FOR __git_ps1
-
-if [ -f /Applications/Xcode.app/Contents/Developer/usr/share/git-core/git-completion.bash ]; then
-    . /Applications/Xcode.app/Contents/Developer/usr/share/git-core/git-completion.bash
-fi
-
-source /Applications/Xcode.app/Contents/Developer/usr/share/git-core/git-prompt.sh
-
-PATH=$PATH:~/Data/Scripts:~/Data/Utils/rar:~/_Applications:~/_Applications/lynx
-
-# alias to quickly show if any Handbrake processes are running
-alias hb='sudo ps -aef | grep HandBrakeCLI'
-
-# alias for quick DNS cache flushing
-alias fc='sudo dscacheutil -flushcache'
-
-# enable the git bash completion commands
-source ~/.git-completion
 
 # enable git unstaged indicators - set to a non-empty value
 GIT_PS1_SHOWDIRTYSTATE="."
@@ -62,27 +52,239 @@ BLINK=$(tput blink)
 REVERSE=$(tput smso)
 UNDERLINE=$(tput smul)
 
-# set the prompt to show current working directory and git branch name, if it exists
+# If we are on a colored terminal
+if tput setaf 1 &> /dev/null; then
+  # Reset the shell from our `if` check
+  tput sgr0 &> /dev/null
 
-# this prompt is a green username, black @ symbol, cyan host, magenta current working directory and white git branch (only shows if you're in a git branch)
-# unstaged and untracked symbols are shown, too (see above)
-# this prompt uses the short colour codes defined above
-#PS1='${GREEN}\u${BLACK}@${CYAN}\h:${MAGENTA}\w${WHITE}`__git_ps1 " (%s)"`\$ '
+  # If you would like to customize your colors, use
+  # # Attribution: http://linuxtidbits.wordpress.com/2008/08/11/output-color-on-bash-scripts/
+  # for i in $(seq 0 $(tput colors)); do
+  #   echo " $(tput setaf $i)Text$(tput sgr0) $(tput bold)$(tput setaf $i)Text$(tput sgr0) $(tput sgr 0 1)$(tput setaf $i)Text$(tput sgr0)  \$(tput setaf $i)"
+  # done
 
-# this is a cyan username, @ symbol and host, magenta current working directory and white git branch
-# it uses the shorter , but visibly more complex, codes for text colours (shorter because the colour code definitions aren't needed)
-#PS1='\[\033[0;36m\]\u@\h\[\033[01m\]:\[\033[0;35m\]\w\[\033[00m\]\[\033[1;30m\]\[\033[0;37m\]`__git_ps1 " (%s)"`\[\033[00m\]\[\033[0;37m\]\$ '
+  # Save common color actions
+  prompt_bold="$(tput bold)"
+  prompt_reset="$(tput sgr0)"
 
-# return the prompt prefix for the second line
-function set_prefix {
-    BRANCH=`__git_ps1`
-    if [[ -z $BRANCH ]]; then
-        echo "${NORMAL}o"
-    else
-        echo "${UNDERLINE}+"
-    fi
+  # If the terminal supports at least 256 colors, write out our 256 color based set
+  if [[ "$(tput colors)" -ge 256 ]] &> /dev/null; then
+    prompt_user_color="$prompt_bold$(tput setaf 27)" # BOLD BLUE
+    prompt_preposition_color="$prompt_bold$(tput setaf 7)" # BOLD WHITE
+    prompt_device_color="$prompt_bold$(tput setaf 39)" # BOLD CYAN
+    prompt_dir_color="$prompt_bold$(tput setaf 76)" # BOLD GREEN
+    prompt_git_status_color="$prompt_bold$(tput setaf 154)" # BOLD YELLOW
+    prompt_git_progress_color="$prompt_bold$(tput setaf 9)" # BOLD RED
+  else
+  # Otherwise, use colors from our set of 8
+    prompt_user_color="$prompt_bold$(tput setaf 4)" # BOLD BLUE
+    prompt_preposition_color="$prompt_bold$(tput setaf 7)" # BOLD WHITE
+    prompt_device_color="$prompt_bold$(tput setaf 6)" # BOLD CYAN
+    prompt_dir_color="$prompt_bold$(tput setaf 2)" # BOLD GREEN
+    prompt_git_status_color="$prompt_bold$(tput setaf 3)" # BOLD YELLOW
+    prompt_git_progress_color="$prompt_bold$(tput setaf 1)" # BOLD RED
+  fi
+
+  prompt_symbol_color="$prompt_bold" # BOLD
+
+else
+# Otherwise, use ANSI escape sequences for coloring
+  # If you would like to customize your colors, use
+  # DEV: 30-39 lines up 0-9 from `tput`
+  # for i in $(seq 0 109); do
+  #   echo -n -e "\033[1;${i}mText$(tput sgr0) "
+  #   echo "\033[1;${i}m"
+  # done
+
+  prompt_reset="\033[m"
+  prompt_user_color="\033[1;34m" # BLUE
+  prompt_preposition_color="\033[1;37m" # WHITE
+  prompt_device_color="\033[1;36m" # CYAN
+  prompt_dir_color="\033[1;32m" # GREEN
+  prompt_git_status_color="\033[1;33m" # YELLOW
+  prompt_git_progress_color="\033[1;31m" # RED
+  prompt_symbol_color="" # NORMAL
+fi
+
+# Apply any color overrides that have been set in the environment
+if [[ -n "$PROMPT_USER_COLOR" ]]; then prompt_user_color="$PROMPT_USER_COLOR"; fi
+if [[ -n "$PROMPT_PREPOSITION_COLOR" ]]; then prompt_preposition_color="$PROMPT_PREPOSITION_COLOR"; fi
+if [[ -n "$PROMPT_DEVICE_COLOR" ]]; then prompt_device_color="$PROMPT_DEVICE_COLOR"; fi
+if [[ -n "$PROMPT_DIR_COLOR" ]]; then prompt_dir_color="$PROMPT_DIR_COLOR"; fi
+if [[ -n "$PROMPT_GIT_STATUS_COLOR" ]]; then prompt_git_status_color="$PROMPT_GIT_STATUS_COLOR"; fi
+if [[ -n "$PROMPT_GIT_PROGRESS_COLOR" ]]; then prompt_git_progress_color="$PROMPT_GIT_PROGRESS_COLOR"; fi
+if [[ -n "$PROMPT_SYMBOL_COLOR" ]]; then prompt_symbol_color="$PROMPT_SYMBOL_COLOR"; fi
+
+function get_git_branch() {
+  # On branches, this will return the branch name
+  # On non-branches, (no branch)
+  ref="$(git symbolic-ref HEAD 2> /dev/null | sed -e 's/refs\/heads\///')"
+  if [[ "$ref" != "" ]]; then
+    echo "$ref"
+  else
+    echo "(no branch)"
+  fi
 }
-# and here's one similar to Paul Irish's famous prompt ... not sure if this is the way he does it, but it works  :)
-#\033[s = save cursor position
-#\033[u = restore cursor position
-PS1='${CYAN}[`date "+%a, %b %d"`]${MAGENTA}\u${WHITE} in ${GREEN}\w${WHITE}${MAGENTA}`__git_ps1 " on %s"` ${WHITE}\r\n $ '
+
+function get_git_progress() {
+  # Detect in-progress actions (e.g. merge, rebase)
+  # https://github.com/git/git/blob/v1.9-rc2/wt-status.c#L1199-L1241
+  git_dir="$(git rev-parse --git-dir)"
+
+  # git merge
+  if [[ -f "$git_dir/MERGE_HEAD" ]]; then
+    echo " [merge]"
+  elif [[ -d "$git_dir/rebase-apply" ]]; then
+    # git am
+    if [[ -f "$git_dir/rebase-apply/applying" ]]; then
+      echo " [am]"
+    # git rebase
+    else
+      echo " [rebase]"
+    fi
+  elif [[ -d "$git_dir/rebase-merge" ]]; then
+    # git rebase --interactive/--merge
+    echo " [rebase]"
+  elif [[ -f "$git_dir/CHERRY_PICK_HEAD" ]]; then
+    # git cherry-pick
+    echo " [cherry-pick]"
+  fi
+  if [[ -f "$git_dir/BISECT_LOG" ]]; then
+    # git bisect
+    echo " [bisect]"
+  fi
+  if [[ -f "$git_dir/REVERT_HEAD" ]]; then
+    # git revert --no-commit
+    echo " [revert]"
+  fi
+}
+
+is_branch1_behind_branch2 () {
+  # $ git log origin/master..master -1
+  # commit 4a633f715caf26f6e9495198f89bba20f3402a32
+  # Author: Todd Wolfson <todd@twolfson.com>
+  # Date:   Sun Jul 7 22:12:17 2013 -0700
+  #
+  #     Unsynced commit
+
+  # Find the first log (if any) that is in branch1 but not branch2
+  first_log="$(git log $1..$2 -1 2> /dev/null)"
+
+  # Exit with 0 if there is a first log, 1 if there is not
+  [[ -n "$first_log" ]]
+}
+
+branch_exists () {
+  # List remote branches           | # Find our branch and exit with 0 or 1 if found/not found
+  git branch --remote 2> /dev/null | grep --quiet "$1"
+}
+
+parse_git_ahead () {
+  # Grab the local and remote branch
+  branch="$(get_git_branch)"
+  remote_branch="origin/$branch"
+
+  # $ git log origin/master..master
+  # commit 4a633f715caf26f6e9495198f89bba20f3402a32
+  # Author: Todd Wolfson <todd@twolfson.com>
+  # Date:   Sun Jul 7 22:12:17 2013 -0700
+  #
+  #     Unsynced commit
+
+  # If the remote branch is behind the local branch
+  # or it has not been merged into origin (remote branch doesn't exist)
+  if (is_branch1_behind_branch2 "$remote_branch" "$branch" ||
+      ! branch_exists "$remote_branch"); then
+    # echo our character
+    echo 1
+  fi
+}
+
+parse_git_behind () {
+  # Grab the branch
+  branch="$(get_git_branch)"
+  remote_branch="origin/$branch"
+
+  # $ git log master..origin/master
+  # commit 4a633f715caf26f6e9495198f89bba20f3402a32
+  # Author: Todd Wolfson <todd@twolfson.com>
+  # Date:   Sun Jul 7 22:12:17 2013 -0700
+  #
+  #     Unsynced commit
+
+  # If the local branch is behind the remote branch
+  if is_branch1_behind_branch2 "$branch" "$remote_branch"; then
+    # echo our character
+    echo 1
+  fi
+}
+
+function parse_git_dirty() {
+  # If the git status has *any* changes (e.g. dirty), echo our character
+  if [[ -n "$(git status --porcelain 2> /dev/null)" ]]; then
+    echo 1
+  fi
+}
+
+function is_on_git() {
+  git rev-parse 2> /dev/null
+}
+
+function get_git_status() {
+  # Grab the git dirty and git behind
+  dirty_branch="$(parse_git_dirty)"
+  branch_ahead="$(parse_git_ahead)"
+  branch_behind="$(parse_git_behind)"
+
+  # Iterate through all the cases and if it matches, then echo
+  if [[ "$dirty_branch" == 1 && "$branch_ahead" == 1 && "$branch_behind" == 1 ]]; then
+    echo "⬢"
+  elif [[ "$dirty_branch" == 1 && "$branch_ahead" == 1 ]]; then
+    echo "▲"
+  elif [[ "$dirty_branch" == 1 && "$branch_behind" == 1 ]]; then
+    echo "▼"
+  elif [[ "$branch_ahead" == 1 && "$branch_behind" == 1 ]]; then
+    echo "⬡"
+  elif [[ "$branch_ahead" == 1 ]]; then
+    echo "△"
+  elif [[ "$branch_behind" == 1 ]]; then
+    echo "▽"
+  elif [[ "$dirty_branch" == 1 ]]; then
+    echo "*"
+  fi
+}
+
+get_git_info () {
+  # Grab the branch
+  branch="$(get_git_branch)"
+
+  # If there are any branches
+  if [[ "$branch" != "" ]]; then
+    # Echo the branch
+    output="$branch"
+
+    # Add on the git status
+    output="$output$(get_git_status)"
+
+    # Echo our output
+    echo "$output"
+  fi
+}
+
+# Symbol displayed at the line of every prompt
+function get_prompt_symbol() {
+  # If we are root, display `#`. Otherwise, `$`
+  if [[ "$UID" == 0 ]]; then
+    echo "#"
+  else
+    echo "\$"
+  fi
+}
+
+# Define the sexy-bash-prompt
+PS1="${CYAN}[`date "+%a, %b %d"`]${MAGENTA}\u${WHITE} in ${GREEN}\w${WHITE}${MAGENTA}`" on %s"`\$( is_on_git &&
+  echo -n \" \[$prompt_preposition_color\]on\[$prompt_reset\] \" && \
+  echo -n \"\[$prompt_git_status_color\]\$(get_git_info)\" && \
+  echo -n \"\[$prompt_git_progress_color\]\$(get_git_progress)\" && \
+  echo -n \"\[$prompt_preposition_color\]\")\n\[$prompt_reset\]\
+\[$prompt_symbol_color\]$(get_prompt_symbol) \[$prompt_reset\]"
